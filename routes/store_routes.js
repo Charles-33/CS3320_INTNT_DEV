@@ -4,9 +4,15 @@ const router = express.Router();
 
 const storeController = require("../controllers/store_controller");
 
-router.get('/:StoreItemId', storeController.getStoreItem);
+router.get('/', storeController.getAllStoreItems);
 
-router.get('/', storeController.storeQuery);
+router.post('/', storeController.createStoreItem );
+
+// As ugly as this looks, it does route me to the proper route instead of 
+// colliding with the other get routes
+router.get(/^\/Recent(?:\/(?=$))?$/i, storeController.getLastTen );
+
+router.get('/:StoreItemId', storeController.getStoreItem);
 
 
 

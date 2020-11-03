@@ -1,77 +1,94 @@
-const DUMMY_USERS = [];
-let userCount = 0;
-const first_user = {
-    "id": userCount,
-    "firstName": "Chuck",
-    "lastName": "Not Chuck",
-    "email": "reddit@hotmail.com",
-    "cartId": userCount,
-    "cart" : [
-       {
-           "itemId": 0,
-           "itemQuantity": 30
-       }
-    ]
-}
-DUMMY_USERS.push(first_user);
-userCount += 1;
+const User = require('../models/user_schema');
+const Cart = require('../models/cart_schema');
+const StoreItem = require('../models/storeItem_schema');
+const CartItem = require('../models/cartItem_schema');
 
-const getUserById =  (req, res) => {
-    let foundUser = DUMMY_USERS.find( (user) => {return user.id == req.params.UserId });
-    res.send(foundUser);
+const getUserById = async(req, res) =>{
+    let user;
+    const UserId = req.params.UserId;
+
+    try{
+        user = await User.findById(UserId).lean();
+    }catch(err){
+        console.log(err);
+    }
+    res.send( user ? user : 404);
+}
+
+const getAllUsers =  async (req, res) => {
+    let users;
+    try{
+        users = await User.find().lean();
+    }catch(err){
+        console.log(err);
+    }
+    res.send( users ? users: 404);
 };
 
-const getUserCart = (req, res ) => {
-    let foundUser = DUMMY_USERS.find( (user) => { return user.id == req.params.UserId });
-    res.send(foundUser.cart);
+const createUser = async (req, res) => {
+    const { firstName, lastName, email, password } = req.body; 
+
+    const newUser = new User({
+        firstName, lastName, email, password
+    });
+
+    const newCart = new Cart({
+        total: 0,
+    });
+
+    newUser.cart = newCart._id;
+    newCart.userId = newUser._id;
+    console.log(newUser);
+    newUser.cart = newCart;
+    try{
+        await newCart.save();
+        await newUser.save();
+    } catch(err){
+        console.log(err);
+    }
+    
+    res.send( newUser.toObject() ? newUser.toObject(): 404); 
 }
-const createUser = (req, res) => {
-    let newUser = {};
 
-    newUser.id = userCount;
-    newUser.firstName = req.body.firstName;
-    newUser.lastName = req.body.lastName;
-    newUser.email = req.body.email;
+const getUserCart = async (req, res ) => {
+    let user;
+    const UserId = req.params.UserId;
 
-    DUMMY_USERS.push( newUser );
-    userCount += 1;
-    return res.send( newUser );
+    try{
+        user = await User.findById(UserId).lean();
+    }catch(err){
+        console.log(err);
+    }
+  
+    let userCart = await Cart.findOne({userId: UserId}).lean().populate({
+        path:'items',
+        populate:{
+            path:'storeItemRef',
+            model:'StoreItem'
+        }
+    });
+    res.send( userCart ? userCart : 404);
 }
 
-const deleteCart = (req, res) => {
-    let foundUser = DUMMY_USERS.find( (user) => { return user.id == req.params.UserId });
-    foundUser.cart = {};
-    res.status(200).json({ message: 'Emptied user cart.'});
+const deleteCart = async (req, res) => {
+    const UserId = req.params.UserId;
+    let userCart = await Cart.findOne({userId: UserId});
+   
+   for(  i = 0; i < userCart.items.length; i++ ){       
+        await CartItem.findOneAndDelete({_id:userCart.items[i]});
+   }
+    
+    userCart.items = [];
+    userCart.total = 0;
+    await userCart.save();
+    res.send(userCart ? userCart : 404);
 }
 
 
-
+exports.getAllUsers = getAllUsers;
 exports.getUserById = getUserById;
 exports.getUserCart = getUserCart;
 exports.createUser = createUser;
 exports.deleteCart = deleteCart;
 
 
-// TODO: Move to routes-controller once we get a database
-const addCartItem = (req, res) => {
-    let foundUser = DUMMY_USERS.find( (user) => { return user.cartId == req.params.CartId });
-    let userCart = foundUser.cart;
-    let newCartItem = {};
-    newCartItem.itemId = req.body.itemId;
-    newCartItem.itemQuantity = req.body.itemQuantity;
-    userCart.push(newCartItem);
-    res.status(200).json({message: 'Item was added to the cart.'});
-
-}
-
-const deleteCartItem = (req, res) => {
-    let foundUser = DUMMY_USERS.find( (user) => { return user.cartId == req.params.CartId });
-    foundUser.cart = foundUser.cart.filter( item => item.itemId !== req.params.cartItemId);
-    if( req.params.cartItemId == "0"){
-        foundUser.cart = {};
-    }
-    res.status(200).send(foundUser.cart);
-
-}
-exports.addCartItem = addCartItem;
-exports.deleteCartItem = deleteCartItem;

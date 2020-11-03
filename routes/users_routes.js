@@ -2,18 +2,16 @@ const express = require('express');
 
 const router = express.Router();
 
-const userControllers = require("../controllers/users_controller");
+const userController = require("../controllers/users_controller");
 
-router.get('/:UserId', userControllers.getUserById);
+router.get('/', userController.getAllUsers);
 
-router.get('/:UserId/cart', userControllers.getUserCart );
+router.get('/:UserId', userController.getUserById);
 
-router.post('/', userControllers.createUser);
+router.get('/:UserId/cart', userController.getUserCart );
 
-router.delete('/:UserId/cart', userControllers.deleteCart );
+router.post('/', userController.createUser);
 
-// TODO: Move to cart_routes.js after we implement database
-router.post('/:CartId/cartItem', userControllers.addCartItem);
-router.delete('/:CartId/cartItem/:cartItemId', userControllers.deleteCartItem);
+router.delete('/:UserId/cart', userController.deleteCart );
 
 module.exports = router;
