@@ -6,6 +6,7 @@ const createStoreItem = async (req, res) => {
     res.send( result.toObject() ? result.toObject() : 404);
 };
 
+
 const getAllStoreItems = async (req, res) => {
     if( req.query.query ){
         let query = req.query.query;
@@ -23,15 +24,9 @@ const getAllStoreItems = async (req, res) => {
 }
 
 const getLastTen = async(req, res) =>{
-    let lastView = req.session.lastItemViewed;
-    let result = [];
-    for( i = lastView.length; i >= 0 && i >= lastView.length - 10; i-- ){
-        if( lastView[i])
-            result.push(lastView[i]);
-    }
-    
-    res.send( result ? result : 404);
+    return res.send(req.session.lastItemViewed || '');
 }
+
 const getStoreItem = async (req, res) => {
     let StoreItemId = req.params.StoreItemId; 
 

@@ -1,7 +1,10 @@
+const jwt = require('jsonwebtoken');
+const accessTokenSecret = "example";
 const User = require('../models/user_schema');
 const Cart = require('../models/cart_schema');
 const StoreItem = require('../models/storeItem_schema');
 const CartItem = require('../models/cartItem_schema');
+
 
 const getUserById = async(req, res) =>{
     let user;
@@ -37,9 +40,6 @@ const createUser = async (req, res) => {
     });
 
     newUser.cart = newCart._id;
-    newCart.userId = newUser._id;
-    console.log(newUser);
-    newUser.cart = newCart;
     try{
         await newCart.save();
         await newUser.save();
@@ -50,7 +50,7 @@ const createUser = async (req, res) => {
     res.send( newUser.toObject() ? newUser.toObject(): 404); 
 }
 
-const getUserCart = async (req, res ) => {
+const getUserCart = async (req, res, next ) => {
     let user;
     const UserId = req.params.UserId;
 
@@ -60,16 +60,42 @@ const getUserCart = async (req, res ) => {
         console.log(err);
     }
   
-    let userCart = await Cart.findOne({userId: UserId}).lean().populate({
+    const userCartId = user.cart;
+    let userCart = await Cart.findOne({_id: userCartId}).lean().populate({
         path:'items',
         populate:{
             path:'storeItemRef',
             model:'StoreItem'
         }
     });
-    res.send( userCart ? userCart : 404);
+     res.send( userCart ? userCart : 404);
+    
 }
 
+const login = async (req, res) => {
+    const {email, password} = req.body;
+    let foundUser;
+    try {
+        foundUser= await User.findOne({ email: email, password: password });
+      } catch (err) {
+        res.send(500);
+    }
+    let token;
+  try {
+    token = jwt.sign(
+      { user: foundUser },
+      accessTokenSecret
+     
+    );
+  } catch (err) {
+    res.send(500);
+  }
+
+   if( foundUser ){
+       res.send({ jwt: token, userId: foundUser._id, user: foundUser});
+   }
+   res.send(token);
+}
 const deleteCart = async (req, res) => {
     const UserId = req.params.UserId;
     let userCart = await Cart.findOne({userId: UserId});
@@ -90,5 +116,6 @@ exports.getUserById = getUserById;
 exports.getUserCart = getUserCart;
 exports.createUser = createUser;
 exports.deleteCart = deleteCart;
+exports.login = login;
 
 

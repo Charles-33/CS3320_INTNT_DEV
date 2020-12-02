@@ -1,0 +1,15 @@
+.addItem{
+    float: left;
+    margin-right: 2%;
+  }
+
+.viewButton{
+  display: inline;
+  margin-left: 2%;
+}
+
+#store{
+  overflow: scroll;
+  overflow-x: hidden;
+  list-style: none;
+}

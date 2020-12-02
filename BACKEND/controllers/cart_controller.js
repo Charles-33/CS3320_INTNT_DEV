@@ -3,7 +3,7 @@ const Cart = require('../models/cart_schema');
 const StoreItem = require('../models/storeItem_schema');
 const CartItem = require('../models/cartItem_schema');
 
-const addCartItem = async (req, res) => {
+const addCartItem = async (req, res, next) => {
     let storeItemId = req.body.storeItemId;
     let storeItem = await StoreItem.findById(storeItemId).lean();
     if( !storeItem ){
@@ -23,7 +23,7 @@ const addCartItem = async (req, res) => {
     destinationCart.items.push(newCartItem);
     await destinationCart.save();
 
-    res.send(destinationCart.toObject());
+    res.send(  destinationCart? destinationCart : 404);
     
 }
 
@@ -33,16 +33,16 @@ const deleteCartItem = async (req, res) => {
     
     let userCart = await Cart.findById( CartId );
     let cartItem = await CartItem.findById( cartItemId);
-    let storeItem = await StoreItem.findById( cartItem.storeItemRef );
+    // let storeItem = await StoreItem.findById( cartItem.storeItemRef );
 
-    let subtractAmount = cartItem.quantity * storeItem.cost;
+    // let subtractAmount = cartItem.quantity * storeItem.cost;
 
     console.log(cartItemId);
     await CartItem.findOneAndDelete({_id: cartItemId});
     
     // Keeps only the cartItemIds that do not match the one being deleted
     userCart.items = userCart.items.filter( id => id != cartItemId );
-    userCart.total -= subtractAmount;
+    // userCart.total -= subtractAmount;
     userCart.save();
     res.send( userCart );
 }

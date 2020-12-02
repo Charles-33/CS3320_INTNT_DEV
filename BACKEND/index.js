@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const cors = require('cors');
 
 const userRoutes = require("./routes/users_routes");
 const storeRoutes = require("./routes/store_routes");
@@ -9,7 +10,13 @@ const cartRoutes = require("./routes/cart_routes");
 
 const app = express();
 app.use(express.json());
+const corsConfig = {
+    origin: true,
+    credentials: true,
+};
 
+app.use(cors(corsConfig));
+app.options('*', cors(corsConfig));
 
 
 mongoose.connect('mongodb+srv://Charles:Cs3320@cluster0.xyuuh.mongodb.net/<dbname>?retryWrites=true&w=majority', { useNewUrlParser: true })
